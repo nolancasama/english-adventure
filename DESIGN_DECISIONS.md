@@ -62,3 +62,39 @@ A useful rule:
 **Leaving a lesson.** ✕ button and the Android/browser back button both ask 「やめる？」 before leaving; partial lesson progress is discarded but answers already given still count toward mastery.
 
 **Audio helper.** `say(item)` plays `/audio/<key>.mp3` if listed in an audio manifest, else Web Speech TTS (en-US, rate ~0.85). SFX are synthesised with WebAudio (no files). Missing TTS must degrade gracefully (text stays visible, no errors).
+
+## 2026-10-04 — Generated review length and test surface
+
+**Review length.** The generated Review uses eight questions: one short challenge per preceding normal lesson. This keeps the recap broader than a normal 5–7 activity lesson without approaching the nine-question Boss finale.
+
+**Acceptance surface.** When and only when the URL includes `?e2e=1`, the app exposes frozen, read-only helpers for the current lesson id, question type, answer item id, and sentence tile order. The normal DOM does not identify correct answers. This lets the full-playthrough harness follow generated content deterministically without exposing answers in ordinary play.
+
+## 2026-10-04 — Visual review corrections (after the first build)
+
+**Abstract items.** `Item.abstract` marks phrases no picture can honestly show (What's your name?, How are you?). They never appear in picture-based questions; they're taught through sentence-builder and speak, where audio carries the meaning. *Why:* the first build pictured them as ❓🙂🏷️ / ❓🙂💭 — near-identical, unguessable, and a 7-year-old would be guessing, not learning.
+
+**Visuals must fit and read at a glance.** At most 2 emoji per visual, laid out in a single row and scaled to fit its card; count visuals in rows of ≤5. *Why:* multi-emoji visuals wrapped vertically and overflowed their cards at 320px.
+
+**Emoji compatibility.** Only emoji from Unicode Emoji ≤ 12.0 in content and UI, so they render on Windows 10, older Android and ChromeOS. Coins use an inline SVG coin, not 🪙 (rendered as a missing glyph on Windows).
+
+**Bigger targets.** Picture choices, word buttons and tiles are sized from the available screen space, not fixed small boxes; Japanese instructions ≥ 18px.
+
+## 2026-10-04 — Deterministic visual-review surface
+
+**Screenshot mode.** `?e2e=1` removes decorative motion and skips lesson title cards so the semantic playthrough cannot race an auto-advance. The narrower `?e2e=1&shots=1` variant instead holds each title card until tapped, allowing the separate screenshot suite to capture it deterministically. Both modes retain the same lesson, reward, persistence, and navigation behavior as the normal app.
+
+## 2026-10-04 — Second visual correction pass
+
+**Responsive picture visuals.** Choice and hero visuals size from their container so emoji pairs, paint blobs, and count rows remain legible at 320px while scaling up on larger screens. Generated picture choices also preserve the target's word-versus-punctuated-phrase shape; impossible same-topic shapes are excluded from target selection.
+
+**Readable route and tiles.** The home route is a continuous SVG road through node centres, and sentence-builder distractors are lowercased except for legitimate names/pronouns so casing cannot disclose the answer.
+
+## 2026-10-04 — Controller review fixes (final MVP pass)
+
+**Phones stack picture choices.** Below 480px wide, listen-picture choices are three full-width cards (aspect ≈2.8:1) stacked vertically; 480px and up they stay 3 square cards across. *Why:* three squares at 320px are ~85px each, which made two-emoji pictures ~22px — too small for a 7-year-old. Stacked cards give larger pictures and bigger tap targets in space that was empty. Emoji size by glyph count (`--glyphs`) so one emoji fills the card and two fit side by side.
+
+**Road measured, not hand-drawn.** The home road is computed from the lesson nodes' measured centres (ResizeObserver), so it passes through every node at any width. *Rejected:* fixed percentage SVG coordinates — they only lined up at one width and drifted off the nodes on tablets.
+
+**Lowercase tiles everywhere.** All sentence-builder tiles display lowercase except "I" and "Kiko"; the success state shows the properly capitalised sentence. Answer checking, the 2-miss hint and the e2e hook all compare against the displayed form. (A first version lowercased the display but compared against the original casing, making sentences that start with a capital unanswerable — caught by the playthrough.)
+
+**PNG icons for install.** Manifest lists PNG 192/512/maskable (rendered from the SVG originals) ahead of SVG, plus an apple-touch-icon, because Android install is most reliable with raster icons.

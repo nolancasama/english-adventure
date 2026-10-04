@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="My English Adventure placeholder icon">
+  <rect width="512" height="512" rx="112" fill="#23aeb1"/>
+  <circle cx="256" cy="251" r="157" fill="#ffb443"/>
+  <path d="m139 155 35-75 51 67M373 155l-35-75-51 67" fill="#ff8a65" stroke="#4b3a32" stroke-width="19" stroke-linejoin="round"/>
+  <circle cx="200" cy="237" r="19" fill="#4b3a32"/>
+  <circle cx="312" cy="237" r="19" fill="#4b3a32"/>
+  <path d="M192 312q64 56 128 0" fill="none" stroke="#4b3a32" stroke-width="21" stroke-linecap="round"/>
+  <path d="m403 349 16 32 37 5-27 26 7 36-33-17-34 17 7-36-27-26 38-5z" fill="#ffe166" stroke="#fff8e8" stroke-width="11"/>
+</svg>

@@ -30,6 +30,12 @@ export interface Item {
   pattern?: string;      // Pattern.id when the item is an instance of a tracked pattern
   ja?: string;           // short Japanese gloss, shown only in the parent view
   audio?: string;        // optional recorded-audio key; the audio helper falls back to TTS of `text`
+  /**
+   * true when no picture can honestly show the meaning (e.g. "What's your name?").
+   * Abstract items are never the target or a choice of listen-picture / picture-word;
+   * they appear only in sentence-builder and speak, where audio carries the meaning.
+   */
+  abstract?: boolean;
 }
 
 export type QuestionType = "listen-picture" | "picture-word" | "sentence-builder" | "speak";

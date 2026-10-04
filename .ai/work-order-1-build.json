@@ -1,0 +1,53 @@
+{
+  "task": "Build the complete playable MVP of 'My English Adventure': a mobile-first, offline-capable PWA (Vite + React + TypeScript) where a 7-year-old Japanese beginner learns English through one world of 10 short data-driven lessons, with rewards, pets, local progress and a parent view. The content contract in src/content/types.ts is FROZEN; every product/UX decision is in DESIGN_DECISIONS.md and must be followed.",
+  "requirements": [
+    "Scaffold a Vite + React + TypeScript app in this directory (package.json, index.html, vite.config.ts, tsconfig). npm scripts: dev, build, preview, test (vitest run), typecheck (tsc --noEmit), e2e (Playwright: builds, serves the production preview, runs the playthrough). No runtime network dependencies: no CDN fonts, images or scripts. A locally bundled rounded font (e.g. @fontsource Nunito/Baloo) is fine; Japanese uses the system font.",
+    "Use src/content/types.ts exactly as written (do not change the contract; if something is truly impossible, stop and say why). Author content in src/content/: items.ts (all Items), patterns.ts, lessons.ts (World with 10 lessons + treasure-chest milestone after 'animals'), pets.ts. Lessons in order: hello 'Hello!', colors 'Colors', animals 'Animals', numbers 'Numbers', food 'Food', i-like 'I like...', do-you-like 'Do you like...?', family 'My Family', review 'Review' (kind review, generate), boss 'Boss Lesson' (kind boss, generate count 9, all three scored types).",
+    "Curriculum (all target English spoken + pictured): Lesson 1 Hello. / Good morning. / Goodbye. / What's your name? / My name is Kiko. / How are you? / I'm happy. / I'm tired. — Lesson 2 red blue yellow green pink purple black white + It's red. / It's blue. — Lesson 3 cat dog bird rabbit fish tiger + It's a cat. / It's a dog. — Lesson 4 one..ten (count visuals) + one cat / two dogs / three birds — Lesson 5 apple banana pizza rice bread ice cream + It's an apple. / It's pizza. — Lesson 6 I like cats. / I like pizza. / I like blue. (+ more mixing earlier vocab) — Lesson 7 Do you like cats? / Do you like pizza? / Yes, I do. / No, I don't. (Yes/No pictured with 👍😊 / 👎🙅, question visuals show the thing) — Lesson 8 mom dad brother sister grandma grandpa + This is my mom. / This is my dad. / I have a brother. Track patterns: my-name-is, i-like, do-you-like, this-is-my, its-a (and its-color if useful). Each normal lesson: 5–7 activities mixing the three scored types plus 0–1 speak moments, ordered hear→recognise→build. Choices in a question must be visually distinct (e.g. never 👋 vs 👋 for Hello vs Goodbye). Every item id referenced anywhere must exist (enforce with a unit test).",
+    "Activity engine renders by question type via a registry (one component per type), never per-lesson screens. listen-picture: auto-plays target audio on show, big 🔊 replay, 3 large picture choices, instruction 「きいて、えをタップしてね！」. picture-word: big picture, 3 large word buttons, instruction 「えにあうことばをタップしてね！」. sentence-builder: show target visual + 🔊, tap tiles to place (tile tap speaks the word), tap a placed tile or ⌫ to undo, auto-check when all answer tiles are placed, success shows the full sentence with punctuation, instruction 「ことばをならべよう！」. speak: plays target, 🔊 Listen again, 🎤 Say it! (a short 'listening' animation ~2s, no recording, no recognition), then できた！ to continue; instruction 「いってみよう！」; unscored. No dragging anywhere.",
+    "Lesson flow: animated title card (~1.5s, tap to skip) → questions with a visible progress bar → end celebration (star pops in, XP counts up, coins counted, pet/Kiko cheers) → back to path. Feedback per DESIGN_DECISIONS: correct = chime + small burst + rotating praise, auto-advance ≈1s; wrong = soft sound + wiggle + 「もういちど！」, retry allowed, wrong picture-word replays the target audio; after 2 misses softly highlight the correct answer. Wrong-first-time questions are re-queued once at the end (max 2 re-queues per lesson). No hearts/lives; mistakes never block.",
+    "Review/boss generation (pure function, unit-tested): pool = items of GenerateSpec.fromLessons; weight 1 + 3·(1−accuracy) for seen items, 2 for unseen; pick count questions, each scored type at least once, sentence-builder only for phrase items, distractors from the same topic and visually distinct; deterministic given a seed for tests. Boss presentation: a friendly 'Quiz Monster' with a health bar that drops on each correct answer; bigger celebration on completion with 🏆 World Complete!, +30 XP, +20 coins, unlocks Unicorn pet.",
+    "Home/path screen: header with ⭐ stars, XP, 🪙 coins; vertical winding path of big round nodes connected by a path line; states completed (⭐), current (bouncing, START bubble on first run), locked (🔒, tapping gives a gentle wiggle). Treasure chest node after Animals: openable once lesson 3 is complete, +10 coins with animation. Only lesson 1 unlocked initially; completing a lesson unlocks the next. Auto-scroll to the current node. Small '🐾 My Pets' button. Latest unlocked pet shown beside the current node. Small ⚙️ parent button in a corner that requires a 3-second press-and-hold (with a fill ring) to open.",
+    "Pets screen: Cat 10, Rabbit 25, Dragon 40 coins, Unicorn (boss reward, shows 🏆 lock until earned). Tap an affordable pet → confirm with a big button → celebration. Unaffordable pets show the coin cost and how many more coins are needed (icon + number, minimal text). No other shop.",
+    "Rewards per DESIGN_DECISIONS: +2 XP correct first try, +1 XP correct after retry; first completion ⭐1 +10 XP +5 coins; replay +5 XP +2 coins, no new star; boss as above.",
+    "Persistence: a single versioned localStorage store (key like 'mea.progress.v1', with a version field and a migrate hook) holding completed lessons, unlocked lessons (derived is fine), XP, stars, coins, unlocked pets, opened milestones, learning days (local YYYY-MM-DD set), per-item mastery {attempts, correct}, per-pattern mastery {attempts, correct}. Mastery counts first attempts of scored questions only. Wrap storage access in try/catch; corrupted data falls back to a fresh state without crashing. Unit-test the store, reward rules and mastery.",
+    "Parent view (behind the hold gate): lessons completed x/10, total XP, learning days, words practised count, 'Words to practise' (items with ≥2 attempts and <80% accuracy, ascending, shown as 'dog — 60%'), 'Patterns to practise' (pattern frame + %), a Reset progress button with two confirmations. Parent view may use more text (Japanese + English labels). Back button to the child UI.",
+    "Audio helper src/audio/: say(text|item, {lang}) — plays /audio/<key>.mp3 if the key is present in src/audio/manifest.ts (empty for now), else Web Speech API (en-US voice preferred, rate ~0.85; ja-JP for instructions); cancels previous speech before speaking; never throws if speechSynthesis or voices are unavailable. SFX (correct, wrong, tap, reward, unlock) synthesised with WebAudio, no files. Audio is unlocked by the first user tap.",
+    "Child UX: mobile-first, works at 320px width with no horizontal scroll, touch targets ≥ 56px (picture choices much larger), no hover-only behaviour, high contrast, minimal text, no external links, no purchases/ads/social. Leaving a lesson via ✕ or the browser/Android back button asks 「やめる？」 (はい / つづける). Respect prefers-reduced-motion. Visual identity: original mascot Kiko (inline SVG), palette sky teal / sunny yellow / coral / cream, playful but not babyish; nothing resembling Duolingo branding, owl, or copy.",
+    "PWA: web manifest (name 'My English Adventure', short_name 'English Adventure', standalone, portrait, theme colour), generated placeholder icons (192, 512, maskable) as local PNG/SVG, service worker precaching the app shell + all built assets so the app fully works offline after first load.",
+    "Testability hook: when the URL has ?e2e=1, expose window.__mea with read-only helpers (current question type, correct answer id(s) / tile order, current lesson id) and set animations/auto-advance delays to near zero. Nothing answer-revealing is present in the normal DOM.",
+    "Playwright e2e (npm run e2e), viewport 320x640 (plus one 768x1024 project if cheap): fresh state → START visible → play lesson 1 through answering at least one question wrong first, verify retry and continue → complete all 10 lessons in order, including speak moments and the boss → verify each completion unlocks the next node and rewards increase → open the chest → buy the cat → reload the page and verify stars/XP/coins/completed lessons/pets persist → open parent view via press-and-hold and verify stats render → reset with confirmations returns to a fresh state. Also assert no horizontal overflow (document.scrollWidth <= innerWidth) on home, a lesson, pets and parent screens, and no console errors.",
+    "Record any new meaningful decision in DESIGN_DECISIONS.md; update CURRENT_STATE.md (what exists, how to run, known issues, next steps) and write a short README.md (run/build/test/how to add a lesson)."
+  ],
+  "constraints": [
+    "Do not modify src/content/types.ts; do not contradict DESIGN_DECISIONS.md.",
+    "No backend, accounts, Firebase/Supabase, analytics, network calls, speech recognition, pronunciation scoring, payments, ads, leaderboards, social, daily quests, multiple worlds, or advanced spaced repetition.",
+    "No external image/font/script URLs at runtime; all assets local.",
+    "Do not copy Duolingo branding, mascot, layouts, sounds or wording.",
+    "Keep the architecture simple: content data → engine → screens; screens never hard-code lesson content.",
+    "Edit source with structured file edits; if a shell-based edit hits a quoting/escaping problem once, stop using the shell for that edit.",
+    "Do not commit; leave changes in the working tree for review."
+  ],
+  "startingPoints": [
+    "src/content/types.ts",
+    "DESIGN_DECISIONS.md",
+    "CURRENT_STATE.md"
+  ],
+  "validation": [
+    "npm run typecheck",
+    "npm test",
+    "npm run build"
+  ],
+  "behavioralAcceptance": {
+    "required": true,
+    "owner": "executor",
+    "commands": ["npm run e2e"]
+  },
+  "category": "feature",
+  "complexity": "hard",
+  "bounded": true,
+  "exploration": "none",
+  "risk": "medium",
+  "expectedCost": "large",
+  "composition": "atomic"
+}

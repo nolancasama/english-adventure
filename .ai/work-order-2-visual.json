@@ -1,0 +1,52 @@
+{
+  "task": "Correction pass on the first build of My English Adventure, after the controller's visual review at 320x640 and a failed Playwright playthrough. The existing implementation is staged in git (`git diff --cached` = first pass, reviewed and kept); fix the listed problems in place, do not rewrite the app. Dependencies are now installed (node_modules present) so typecheck/test/build can run.",
+  "notes": "Observed at 320x640 (controller screenshots): (1) header coin glyph 🪙 renders as a tofu box on Windows Chromium; (2) home title 'My English Adventure' runs under the ⚙️ parent button; (3) START bubble covers the 'Hello!' node label and node labels sit on top of the vertical path line; (4) multi-emoji visuals (e.g. ❓🙂🏷️, 🌅👋, 👉👩❤️) wrap into a vertical stack and overflow their cards — in listen-picture choices and the picture-word/speak hero card they spill outside the card and over the buttons; (5) listen-picture choice cards are ~80px with the lower half of the screen empty; word buttons and tiles are small; Japanese instruction text is ~14px; (6) What's your name? / How are you? are pictured with cryptic near-identical emoji and used as picture-question targets/choices. Playwright failure: the current lesson node bounces forever, so locator.click() never sees a stable element; and `if (await titleCard.isVisible()) await titleCard.click()` races with the title card's auto-advance and hangs. New decisions are recorded at the end of DESIGN_DECISIONS.md ('Visual review corrections'); src/content/types.ts gained one optional field, Item.abstract.",
+  "requirements": [
+    "Coins: replace every 🪙 in UI and content with a small inline-SVG coin component (gold, readable at 18–24px). Audit every emoji used in src/ (content, pets, UI) and replace any newer than Unicode Emoji 12.0 with an Emoji ≤12.0 or SVG alternative. Add a unit test that fails if src/ contains any emoji from a denylist that includes at least 🪙 and any post-12.0 emoji you found.",
+    "Home header at 320px: title, mascot, stats and the ⚙️ parent button never overlap. Make ⚙️ a modest corner control (about 44px, low visual weight) — it's a parent control, not a child CTA; keep the 3-second hold.",
+    "Path: node labels never overlap the path line or the START bubble; START bubble sits clear of the label (e.g. above the node). Keep the winding layout.",
+    "ItemVisual: content always fits inside its container at every size. Emoji visuals render on one line, scaled to the container (no wrapping, no overflow). Count visuals lay out in rows of at most 5 so 1–10 are countable at a glance. Colour blobs unchanged. Content rule: at most 2 emoji per visual — rewrite item visuals that use 3 (e.g. this-is-my-mom → 👉👩 or similar, i-have-a-brother → 2 emoji).",
+    "Item.abstract: set abstract: true on whats-your-name and how-are-you (and any other item whose meaning no picture shows). Abstract items must never be the target or a choice of listen-picture or picture-word, in authored lessons or in generate.ts; they appear only in sentence-builder and speak. Enforce with unit tests over all authored lessons and over generated review/boss sets for several seeds. Rebalance lesson 1 so it still has 5–7 activities with all three scored types and stays clear and learnable. Also add the missing its-a pattern to its-an-apple / its-pizza if appropriate.",
+    "Sizing: listen-picture choice cards fill the available width (3 across at 320px, ~96px+ each, larger on tablets) and the question layout uses the vertical space instead of leaving the lower half empty; picture-word hero visual and word buttons are larger (buttons ≥ 60px tall, ≥ 20px text); sentence-builder tiles ≥ 56px tall with ≥ 20px text and the ⌫ button keeps its row; Japanese instruction text ≥ 18px. Verify no horizontal overflow at 320px and nothing clipped vertically at 320x568.",
+    "E2E robustness: under ?e2e=1, disable infinite/decorative animations and transitions (e.g. a root class that sets animation/transition to none) so nodes are stable; the title card is handled without the isVisible→click race (e.g. wait for either the title card or the first question, or have e2e mode skip the title card). Keep normal-mode animations and prefers-reduced-motion behaviour unchanged.",
+    "Visual evidence: add `npm run e2e:shots` — a Playwright spec (separate from the playthrough, excluded from the default e2e run) that plays all 10 lessons at 320x640 using the e2e hook and saves one PNG per question screen, the title card, each celebration, home (fresh and after completion), pets, pet confirm and parent view to .tmp/shots/ (gitignored). Name files <lesson>-<nn>-<type>.png.",
+    "Run npm run typecheck, npm test, npm run build. Then attempt npm run e2e and npm run e2e:shots if your environment can launch Chromium; if it cannot, say so plainly — do not claim they passed.",
+    "Update CURRENT_STATE.md for anything that changed; record any further meaningful decision in DESIGN_DECISIONS.md."
+  ],
+  "constraints": [
+    "Do not change src/content/types.ts (the Item.abstract field is already added).",
+    "Fix in place; no rewrite of the app, no dependency swaps, no new libraries.",
+    "Do not weaken the playthrough's assertions to make it pass (no force clicks on the main path, no skipped lessons, no removed persistence/overflow/console-error checks).",
+    "Keep all DESIGN_DECISIONS.md decisions; do not copy Duolingo branding/wording.",
+    "Edit files with your structured patch/edit tool. If a shell-based edit fails once because of quoting or escaping, switch to the structured mechanism — do not try another escaped variant.",
+    "Do not commit or unstage; leave changes as unstaged working-tree edits on top of the staged first pass."
+  ],
+  "startingPoints": [
+    "src/App.tsx",
+    "src/styles.css",
+    "src/components/ItemVisual.tsx",
+    "src/engine/activities.tsx",
+    "src/content/items.ts",
+    "src/content/lessons.ts",
+    "src/content/generate.ts",
+    "tests/e2e/playthrough.spec.ts",
+    "playwright.config.ts",
+    "DESIGN_DECISIONS.md"
+  ],
+  "validation": [
+    "npm run typecheck",
+    "npm test",
+    "npm run build"
+  ],
+  "behavioralAcceptance": {
+    "required": true,
+    "owner": "executor",
+    "commands": ["npm run e2e"]
+  },
+  "category": "ui-css",
+  "complexity": "medium",
+  "bounded": true,
+  "exploration": "local",
+  "risk": "medium",
+  "expectedCost": "medium"
+}
