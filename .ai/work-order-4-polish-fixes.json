@@ -1,0 +1,54 @@
+{
+  "task": "Correction pass on the uncommitted 'Storybook Adventure' visual pass of My English Adventure. The pass is mostly good and stays; fix the defects the controller found in the rendered 320x640 screenshots (.tmp/shots/) and the code-quality problem, in place. Do not redesign.",
+  "notes": "Controller review of .tmp/shots after the first pass. Keep: home scene, Kiko, Quiz Monster + HP bar, sunburst title/celebration, boss victory, pets pedestals and owned ribbon, colour blobs, count visuals. Defects: (1) CRITICAL — single-glyph 3D emoji art overflows and is clipped inside picture-choice cards and the prompt card: animals-01-listen-picture shows only the top of the dog's ears, food-03-picture-word shows half a banana cut off at the bottom. Cause is in src/styles.css around .emoji-art / .emoji-visual > span / .item-visual: the image's max-height:100% resolves against a parent with no definite height, so it renders at its intrinsic 192px; meanwhile two-glyph rows (👉🐱 in animals-05-sentence-builder) render small. (2) animals-00-title: the hero art overlaps Kiko. (3) pets-00-list: pet names (Cat, Rabbit, Dragon) are drawn on top of the pedestal ellipse and are hard to read. (4) Japanese instructions wrap leaving an orphan 「ね！」 on its own line (boss-01, food-03). (5) Celebration primary button label 「Pathへ →」 is pale white on light teal — low contrast. (6) home-00-fresh: the floating My Pets button covers the chest milestone and the label beside it at the initial scroll position. (7) Sentence-builder at 320x640 leaves the bottom ~35% of the screen empty. (8) src/styles.css is effectively minified (41 KB in 159 lines, 40 lines over 300 chars) and App.tsx has lines up to 390 chars — unmaintainable. (9) package.json lists sharp but this checkout's node_modules lacks it. (10) The responsive screenshots reported in .tmp/shots/responsive/ do not exist (likely wiped by the shots suite).",
+  "requirements": [
+    "Fix emoji-art sizing so every image visual is fully visible and centred inside its container, never clipped: a single glyph fills roughly 70–80% of the card's smaller dimension; two glyphs sit side by side, each as large as fits; count visuals unchanged. Must hold in listen-picture choice cards, the picture-word/speak prompt card, the sentence-builder hero, title-card hero, home nodes, pets and celebration, at 320x568, 320x640, 390x844 and 768x1024.",
+    "Add a geometric guard to tests/e2e/shots.spec.ts: on every captured question screen, assert each .emoji-art and .color-blob bounding box lies within its card/prompt container's box (1px tolerance). Prove the guard: run it once against the current broken CSS and confirm it FAILS on the clipping, then fix and confirm it PASSES. Report both observations.",
+    "Title card: hero art and Kiko do not overlap at any of the four viewports; the hero keeps its natural aspect ratio.",
+    "Pets: the name sits clearly below the pedestal (or on a readable plate), never on top of the pedestal art.",
+    "Japanese instruction lines never leave a 1–2 character orphan: keep the instruction on one line at 320px when it fits at ≥18px (shrink toward 18px first), otherwise wrap at a natural phrase boundary (e.g. word-break: keep-all with explicit break opportunities, or text-wrap: balance). The speaker button stays beside the text without squeezing it.",
+    "All button labels meet WCAG AA contrast (≥4.5:1) against their fill, including the celebration continue button.",
+    "Home: at the initial scroll position the floating My Pets control never covers the current node, the chest milestone or any label. Use a bottom dock (static gradient fade, no backdrop-filter) and enough scroll padding that every node and label can be scrolled fully clear of it.",
+    "Lesson layouts use the vertical space at 320x640 and 390x844: no screen leaves a large empty band at the bottom (e.g. balance the stack vertically or give Kiko a companion spot at the bottom that reacts to feedback). Tap targets no smaller than now.",
+    "Reformat src/styles.css into readable CSS matching the pre-pass file's style (git show HEAD:src/styles.css): one selector block per rule, one declaration per line, grouped by section with short comment headers, no lines over ~120 chars. Wrap App.tsx and other changed TSX files to the same readable style (no lines over ~120 chars). No visual or behaviour change from formatting alone.",
+    "Run npm install so node_modules matches package.json/package-lock.json (sharp present).",
+    "Write the 390x844 and 768x1024 screenshots (home, one listen-picture, one picture-word, sentence-builder, title card, celebration, boss question, pets) to .tmp/responsive-shots/ — a directory the shots suite does not clear — and look at them yourself along with the 320x640 set; fix anything clipped, overlapping or misaligned.",
+    "Run npm run typecheck, npm test, npm run build, npm run e2e, npm run e2e:shots. If a command cannot run in your environment, say so plainly.",
+    "Update CURRENT_STATE.md where it changed; record any meaningful new visual decision in DESIGN_DECISIONS.md."
+  ],
+  "constraints": [
+    "Fix in place; keep the art direction and everything listed as 'Keep' in notes.",
+    "Do not change content, lesson logic, scoring, persistence, audio or ?e2e=1 semantics.",
+    "Do not weaken existing test or e2e assertions; the new geometric guard is added on top.",
+    "No new runtime dependencies; no CDN assets; no animated filter/blur/backdrop-filter.",
+    "Edit files with your structured patch/edit tool. If a shell-based edit fails once because of quoting or escaping, switch to the structured mechanism — do not try another escaped variant.",
+    "Do not commit; leave changes uncommitted on top of the existing uncommitted pass."
+  ],
+  "startingPoints": [
+    "src/styles.css",
+    "src/components/ItemVisual.tsx",
+    "src/App.tsx",
+    "src/engine/activities.tsx",
+    "src/components/Instruction.tsx",
+    "tests/e2e/shots.spec.ts",
+    "DESIGN_DECISIONS.md"
+  ],
+  "validation": [
+    "npm run typecheck",
+    "npm test",
+    "npm run build"
+  ],
+  "behavioralAcceptance": {
+    "required": true,
+    "owner": "worker",
+    "commands": ["npm run e2e", "npm run e2e:shots"]
+  },
+  "category": "ui-css",
+  "complexity": "medium",
+  "bounded": true,
+  "exploration": "local",
+  "risk": "medium",
+  "expectedCost": "medium",
+  "composition": "atomic",
+  "visual": true
+}

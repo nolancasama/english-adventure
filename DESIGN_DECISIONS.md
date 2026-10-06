@@ -98,3 +98,25 @@ A useful rule:
 **Lowercase tiles everywhere.** All sentence-builder tiles display lowercase except "I" and "Kiko"; the success state shows the properly capitalised sentence. Answer checking, the 2-miss hint and the e2e hook all compare against the displayed form. (A first version lowercased the display but compared against the original casing, making sentences that start with a capital unanswerable — caught by the playthrough.)
 
 **PNG icons for install.** Manifest lists PNG 192/512/maskable (rendered from the SVG originals) ahead of SVG, plus an apple-touch-icon, because Android install is most reliable with raster icons.
+
+## 2026-10-06 — "Storybook Adventure" art direction (premium visual pass)
+
+**Goal.** Move from a clean-but-flat MVP to a polished, premium mobile-game look ("AAA" feel) without changing content, lesson logic, scoring or the e2e contract. A 7-year-old should feel she is playing a real game, not doing a worksheet.
+
+**Consistent illustrated art.** Content emoji render as bundled Microsoft Fluent Emoji **3D** images (MIT licence), resized to small WebP files and precached, so the art is identical and glossy on every device. `ItemVisual` maps glyph → image and falls back to the text emoji if an image is missing. UI chrome (close, back, speaker, gear, lock, backspace, star, paw, check) uses one custom inline-SVG icon set, not emoji. *Rejected:* platform emoji (inconsistent, flat on Windows/old Android); Twemoji (flat, less premium); commissioning custom art (out of scope now — the image path still allows it later).
+
+**Typography.** Bundled locally (offline rule still holds): Fredoka for English (rounded, friendly, very legible for early readers) and M PLUS Rounded 1c for Japanese, subset to the glyphs the app uses.
+
+**Material: "candy 3D".** Tokens on `:root` (teal, sunny yellow, coral, cream, sky, ink, plus per-topic hues), each with light/base/dark/edge shades. Interactive surfaces have a gradient fill, a top inner highlight and a solid darker bottom edge that collapses when pressed. Cards are warm white with soft borders and layered shadows. Palette stays teal/yellow/coral/cream — not Duolingo green.
+
+**Characters.** Kiko is redrawn as a proper SVG character: a round, fluffy peach-orange creature with soft rounded ears (the old pointed ears read as devil horns), glossy eyes with highlights, blush and a belly patch, plus moods (idle blink/bob, happy, cheer, encourage). The Quiz Monster becomes a friendly, fuzzy purple SVG character with idle/hit/defeated states and a segmented game-style HP bar.
+
+**World and screens.** Home is a layered storybook scene (sky, drifting clouds, hills) with a sandy road and 3D medallion nodes (completed: gold rim and star; current: glow pulse and START flag; locked: desaturated stone with a lock). The chest sits on the road as a milestone. Lessons get topic-tinted backdrops, a chunky shiny progress bar, a feedback banner that slides up (teal praise / soft coral 「もういちど！」) and particle bursts. Title cards get a sunburst, hero art and a ribbon. The celebration screen gets confetti, stars that stamp in, rewards that count up, and Kiko cheering. Pets are a collection display (pedestal, silhouettes when locked, an owned badge). The parent view stays calm and plain because it is for adults.
+
+**Motion and performance.** Animate only transform and opacity, over 150–400 ms with a springy ease; no animated blur or backdrop-filter; at most about 60 particles. `prefers-reduced-motion` and `?e2e=1` still remove decorative motion. Budget: smooth on a low-end Android, with no more than about 3 MB of added precache.
+
+## 2026-10-06 — Storybook route geometry and offline art budget
+
+**Route geometry.** The treasure chest is a first-class measured road anchor between Animals and Numbers, so the ResizeObserver route passes through it at every breakpoint. Labels use alternating banner plates outside the road corridor, and the route reserves a full final-button clearance area rather than relying on viewport-specific offsets.
+
+**Offline art budget.** Fluent content art is normalized to 192px WebP and the two local fonts are aggressively scoped (Fredoka Latin plus an app-specific M PLUS Rounded 1c Japanese subset). This keeps the complete Workbox precache comfortably below 1 MB while retaining consistent offline typography and illustration.

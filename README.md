@@ -49,3 +49,7 @@ The content model is deliberately data-first. Do not change `src/content/types.t
 5. Run the validation commands above. Content integrity tests ensure referenced items and patterns exist and generated lessons remain valid.
 
 User-facing and curriculum decisions live in `DESIGN_DECISIONS.md`. Implementation status and known limitations live in `CURRENT_STATE.md`.
+
+## Art attribution
+
+Content illustrations are derived from [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji), used under the MIT License. The artwork is converted to local WebP assets and bundled with the app; it is never fetched at runtime.

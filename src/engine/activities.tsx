@@ -4,6 +4,7 @@ import { itemsById } from "../content/items";
 import type { ListenPictureQ, PictureWordQ, Question, SentenceBuilderQ, SpeakQ } from "../content/types";
 import { Instruction } from "../components/Instruction";
 import { ItemVisual } from "../components/ItemVisual";
+import { Icon } from "../components/Icon";
 
 export interface ActivityProps<Q extends Question = Question> {
   question: Q;
@@ -23,6 +24,30 @@ function shuffled<T>(values: T[]): T[] {
   return result;
 }
 
+function AudioButton({ className, label, onPlay, children }: {
+  className: string;
+  label: string;
+  onPlay(): void;
+  children?: React.ReactNode;
+}) {
+  const [pulsing, setPulsing] = useState(false);
+  function play() {
+    setPulsing(false);
+    requestAnimationFrame(() => setPulsing(true));
+    window.setTimeout(() => setPulsing(false), 620);
+    onPlay();
+  }
+  return (
+    <button
+      className={`${className} audio-button${pulsing ? " is-playing" : ""}`}
+      aria-label={label}
+      onClick={play}
+    >
+      <Icon name="speaker" />{children}
+    </button>
+  );
+}
+
 function ListenPicture({ question, misses, disabled, e2e, onAttempt }: ActivityProps<ListenPictureQ>) {
   const target = itemsById[question.target];
   const choices = useMemo(() => shuffled(question.choices), [question]);
@@ -30,14 +55,19 @@ function ListenPicture({ question, misses, disabled, e2e, onAttempt }: ActivityP
   return (
     <section className="activity" data-testid="question-type" data-question-type="listen-picture">
       <Instruction>きいて、えをタップしてね！</Instruction>
-      <button className="replay-button" aria-label="Listen again" onClick={() => say(target)}>🔊</button>
+      <AudioButton className="replay-button" label="Listen again" onPlay={() => say(target)} />
       <div className="picture-grid">
         {choices.map((id) => {
           const item = itemsById[id];
           return (
-            <button key={id} className={`picture-choice ${misses >= 2 && id === question.target ? "hint" : ""}`}
-              disabled={disabled} data-testid={e2e ? `choice-${id}` : undefined}
-              aria-label={`picture ${choices.indexOf(id) + 1}`} onClick={() => onAttempt(id === question.target)}>
+            <button
+              key={id}
+              className={`picture-choice ${misses >= 2 && id === question.target ? "hint" : ""}`}
+              disabled={disabled}
+              data-testid={e2e ? `choice-${id}` : undefined}
+              aria-label={`picture ${choices.indexOf(id) + 1}`}
+              onClick={() => onAttempt(id === question.target)}
+            >
               <ItemVisual visual={item.visual} />
             </button>
           );
@@ -56,13 +86,19 @@ function PictureWord({ question, misses, disabled, e2e, onAttempt }: ActivityPro
       <div className="prompt-visual"><ItemVisual visual={target.visual} /></div>
       <div className="word-choices">
         {choices.map((id) => (
-          <button key={id} disabled={disabled} data-testid={e2e ? `choice-${id}` : undefined}
+          <button
+            key={id}
+            disabled={disabled}
+            data-testid={e2e ? `choice-${id}` : undefined}
             className={misses >= 2 && id === question.target ? "hint" : ""}
             onClick={() => {
               const correct = id === question.target;
               say(target);
               onAttempt(correct);
-            }}>{itemsById[id].text}</button>
+            }}
+          >
+            {itemsById[id].text}
+          </button>
         ))}
       </div>
     </section>
@@ -76,7 +112,11 @@ function wordsFor(question: SentenceBuilderQ): string[] {
 function SentenceBuilder({ question, misses, disabled, e2e, onAttempt }: ActivityProps<SentenceBuilderQ>) {
   const target = itemsById[question.target];
   const answer = useMemo(() => wordsFor(question), [question]);
-  const tiles = useMemo(() => shuffled([...answer, ...(question.distractors ?? [])]).map((word, id) => ({ word: displayTileWord(word), id })), [answer, question]);
+  const tiles = useMemo(
+    () => shuffled([...answer, ...(question.distractors ?? [])])
+      .map((word, id) => ({ word: displayTileWord(word), id })),
+    [answer, question],
+  );
   const [placed, setPlaced] = useState<Array<{ word: string; id: number }>>([]);
 
   useEffect(() => setPlaced([]), [question]);
@@ -104,22 +144,44 @@ function SentenceBuilder({ question, misses, disabled, e2e, onAttempt }: Activit
       <Instruction>ことばをならべよう！</Instruction>
       <div className="builder-prompt">
         <ItemVisual visual={target.visual} small />
-        <button className="round-audio" aria-label="Listen again" onClick={() => say(target)}>🔊</button>
+        <AudioButton className="round-audio" label="Listen again" onPlay={() => say(target)} />
       </div>
       <div className={`sentence-slots ${misses ? "retrying" : ""}`}>
         {disabled ? <p className="sentence-success">{target.text}</p> : <>
           {placed.length === 0 && <span className="slot-placeholder">…</span>}
-          {placed.map((tile, index) => <button key={`${tile.id}-${index}`} data-testid={e2e ? "placed-tile" : undefined} onClick={() => removeAt(index)}>{tile.word}</button>)}
+          {placed.map((tile, index) => (
+            <button
+              key={`${tile.id}-${index}`}
+              data-testid={e2e ? "placed-tile" : undefined}
+              onClick={() => removeAt(index)}
+            >
+              {tile.word}
+            </button>
+          ))}
         </>}
       </div>
       <div className="tile-bank">
-        {tiles.map((tile, index) => <button key={tile.id} disabled={used.has(tile.id) || disabled}
-          data-testid={e2e ? `tile-${index}` : undefined}
-          data-word={e2e ? tile.word : undefined}
-          className={misses >= 2 && displayTileWord(answer[placed.length] ?? "") === tile.word ? "hint" : ""}
-          onClick={() => addTile(tile)}>{tile.word}</button>)}
-        <button className="undo" data-testid={e2e ? "sentence-undo" : undefined} disabled={!placed.length || disabled}
-          aria-label="Undo" onClick={() => setPlaced((current) => current.slice(0, -1))}>⌫</button>
+        {tiles.map((tile, index) => (
+          <button
+            key={tile.id}
+            disabled={used.has(tile.id) || disabled}
+            data-testid={e2e ? `tile-${index}` : undefined}
+            data-word={e2e ? tile.word : undefined}
+            className={misses >= 2 && displayTileWord(answer[placed.length] ?? "") === tile.word ? "hint" : ""}
+            onClick={() => addTile(tile)}
+          >
+            {tile.word}
+          </button>
+        ))}
+        <button
+          className="undo"
+          data-testid={e2e ? "sentence-undo" : undefined}
+          disabled={!placed.length || disabled}
+          aria-label="Undo"
+          onClick={() => setPlaced((current) => current.slice(0, -1))}
+        >
+          <Icon name="backspace" />
+        </button>
       </div>
     </section>
   );
@@ -142,10 +204,28 @@ function Speak({ question, e2e, onSpeakDone }: ActivityProps<SpeakQ>) {
       <Instruction>いってみよう！</Instruction>
       <div className="prompt-visual"><ItemVisual visual={target.visual} /></div>
       <p className="speak-target">{target.text}</p>
-      <button className="speak-action" data-testid={e2e ? "speak-listen" : undefined} onClick={() => say(target)}>🔊 Listen again</button>
-      {stage === "ready" && <button className="speak-action primary" data-testid={e2e ? "speak-say" : undefined} onClick={pretendListen}>🎤 Say it!</button>}
+      <AudioButton className="speak-action" label="Listen again" onPlay={() => say(target)}>
+        <span>Listen again</span>
+      </AudioButton>
+      {stage === "ready" && (
+        <button
+          className="speak-action primary"
+          data-testid={e2e ? "speak-say" : undefined}
+          onClick={pretendListen}
+        >
+          <Icon name="microphone" /> Say it!
+        </button>
+      )}
       {stage === "listening" && <div className="listening-dots" aria-label="listening"><i /><i /><i /></div>}
-      {stage === "done" && <button className="speak-action success" data-testid={e2e ? "speak-done" : undefined} onClick={onSpeakDone}>できた！</button>}
+      {stage === "done" && (
+        <button
+          className="speak-action success"
+          data-testid={e2e ? "speak-done" : undefined}
+          onClick={onSpeakDone}
+        >
+          <Icon name="check" /> できた！
+        </button>
+      )}
     </section>
   );
 }

@@ -1,0 +1,71 @@
+{
+  "task": "Premium visual/UI pass on My English Adventure (Vite + React + TS PWA for a 7-year-old Japanese EFL learner). Implement the art direction recorded at the end of DESIGN_DECISIONS.md ('2026-10-06 — \"Storybook Adventure\" art direction'). This is a visual pass over a working, tested MVP: change how everything looks and feels, not what the game does.",
+  "notes": "Current state (controller screenshots in .tmp/shots/ at 320x640): flat cream background everywhere, system font, platform emoji, plain white cards with flat borders, plain gradient title card, sparse celebration screen, Kiko is a basic orange circle whose pointed ears read as devil horns, Quiz Monster is a 👾 emoji plus a flat red bar, the home road nodes are flat circles and the label plates float in cream boxes, the fixed 'My Pets' button covers road labels near the bottom, the chest sits beside the road instead of on it. Fluent Emoji 3D source: https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/<Folder Name>/3D/<file>_3d.png (verified reachable, ~43KB 256px PNGs); each folder has metadata.json with 'glyph' and 'unicode', so a script can build the glyph→folder map from the repo tree (GitHub API tree listing or the metadata files). Some glyphs have skin-tone variants under 'Default/3D/'.",
+  "requirements": [
+    "Read DESIGN_DECISIONS.md fully first; the new art-direction entry is the spec, the older entries are constraints that still hold (sizes, non-reader support, e2e surface, emoji ≤12.0 rule for any text fallback, no Duolingo look).",
+    "Art pipeline: add scripts/fetch-emoji-art.mjs that collects every emoji glyph used in src/content and pets, downloads the matching Fluent Emoji 3D PNG, converts it to ~192px WebP (add `sharp` as a devDependency) and writes public/art/emoji/<codepoint>.webp plus a generated src/art/emojiManifest.ts (glyph → path). Commit the generated assets (do not fetch at runtime or at build time). Ensure Workbox precaches them. Any glyph without a Fluent asset falls back to the text emoji; the script reports such glyphs. Add a unit test that every content/pet glyph either has a manifest entry or is listed in an explicit allowed-fallback list.",
+    "ItemVisual renders the 3D images (with the existing single-row/≤2 glyph/count-rows sizing rules preserved, no overflow at 320px), with a subtle soft contact shadow under hero visuals. Colour blobs become glossy paint splats/blobs that match the 3D look.",
+    "Icons: one custom inline-SVG icon component set (close, back, speaker, gear, lock, backspace, star, paw, check, chest if useful) replacing UI emoji. Speaker button looks like a big glossy 3D audio button with a sound-wave pulse while audio plays (if the audio layer exposes play state cheaply; otherwise pulse on tap).",
+    "Fonts: bundle Fredoka (latin) and M PLUS Rounded 1c (Japanese, subset to the glyphs used in src plus hiragana/katakana and basic punctuation) as local woff2, precached, font-display swap, system fallbacks. Total font payload ≤ 400 KB. Use @fontsource packages and/or a subsetting devDependency; whatever you use must work offline after first load.",
+    "Design tokens on :root and the candy-3D material (buttons, choice cards, word buttons, tiles, chips, modals) with pressed states (bottom edge collapses, translateY) and a clear correct/hint/wrong state treatment that still never shows a red X or 'WRONG'.",
+    "Kiko: redraw as an SVG character component with moods (idle with blink + gentle bob, happy, cheer, encourage) per the spec; used on home header, lesson feedback, title card and celebration. Quiz Monster: friendly fuzzy purple SVG character with idle/hit/defeated states and a segmented HP bar (one segment per boss question) with a damage flash/drain on correct answers.",
+    "Home: layered storybook scene (sky gradient, a few slowly drifting clouds, soft hills), sandy road with edge and dashed centre line (keep the measured ResizeObserver road), 3D medallion nodes in topic colours showing the lesson's art (completed: gold rim + star; current: glow pulse + START flag; locked: desaturated stone + lock), banner-plate labels that never overlap the road, nodes, START flag or each other, the chest as a milestone node on the road, a glassy HUD for stars/XP/coins, and enough bottom padding that the floating My Pets button never covers a label or node when scrolled to the end.",
+    "Lesson screens (listen-picture, picture-word, sentence-builder, speak): topic-tinted backdrop, chunky shiny progress bar with animated fill, consistent card styling, entrance animation for each new question, a feedback banner that slides up from the bottom on answer (correct: teal with rotating praise + happy Kiko + particle burst from the tapped element; wrong: soft coral 「もういちど！」 + wiggle), without changing the existing auto-advance timing, re-queue or hint logic. Sentence-builder: drop zone looks like a slot rail; tiles animate between pool and slot.",
+    "Title card: topic-colour sunburst with slow-rotating rays, large hero art, 'Lesson N' ribbon, bold display title with outline/shadow, Japanese subtitle, pulsing tap hint. Boss title card uses the dusk arena look.",
+    "Celebration: sunburst + confetti (≤60 particles, CSS or one canvas), star stamp-in with bounce, Kiko cheering with the current pet, reward chips that count up with stagger, big primary continue button. Boss victory feels like the biggest moment (defeated monster, unicorn reveal).",
+    "Pets: collection display with pedestal/spotlight cards; locked & unaffordable = dark silhouette + price; affordable = glowing; owned = ribbon/check badge; purchase confirm modal in the new style with a small reveal animation on purchase.",
+    "Parent view and reset confirms: clean, calm, readable restyle using the tokens and fonts, no game effects.",
+    "Screen transitions (fade/slide ~250ms) between home, lesson, celebration, pets, parent.",
+    "Motion rules: animate only transform/opacity; no animated filter/blur/backdrop-filter; respect prefers-reduced-motion; under ?e2e=1 all decorative motion and transitions are off and elements are stable (existing contract — the playthrough clicks nodes and cards).",
+    "Responsive: must look intentional at 320x568, 320x640, 390x844 and 768x1024 (tablet layouts may use more columns, larger art). No horizontal overflow, nothing clipped, tap targets no smaller than today.",
+    "Update the PWA icons (public/icons/*.svg and regenerated PNGs, see .tmp/icons.mjs for the existing render approach) to feature the new Kiko, and the manifest theme/background colours if they change.",
+    "Run npm run typecheck, npm test, npm run build. Then run npm run e2e and npm run e2e:shots and look at the screenshots in .tmp/shots/ yourself; fix anything that looks broken, overlapping, clipped, misaligned or cheap before finishing. Also capture home, one lesson question, the celebration and pets at 390x844 and 768x1024 into .tmp/shots/responsive/ (a small script is fine). If any command cannot run in your environment, say so plainly — do not claim it passed.",
+    "Update CURRENT_STATE.md (what exists, how to regenerate art, known issues). Record any further meaningful visual decision you make in DESIGN_DECISIONS.md.",
+    "Add a short attribution for Fluent Emoji (MIT) in README.md."
+  ],
+  "constraints": [
+    "Do not change lesson content, the item/lesson data, generate.ts logic, scoring, rewards, persistence format, audio behaviour, or the ?e2e=1 hooks' semantics. src/content/types.ts may only change if strictly needed for rendering, and must stay backward compatible.",
+    "Do not weaken or skip any test or e2e assertion; if a selector the playthrough relies on changes, keep an equivalent accessible role/name so the spec still finds it without force-clicks.",
+    "No runtime network dependency: no CDN fonts, images or scripts. Added precache ≤ ~3 MB total.",
+    "No new runtime UI libraries (no animation frameworks, no component kits); CSS + small React components. Dev-only tooling (sharp, font subsetting) is fine.",
+    "No Duolingo-like owl, green-dominant palette or copied wording.",
+    "Japanese text stays short hiragana as today; don't add new copy beyond what's specified (praise words, 'Lesson N').",
+    "Edit files with your structured patch/edit tool. If a shell-based edit fails once because of quoting or escaping, switch to the structured mechanism — do not try another escaped variant.",
+    "Do not commit; leave all changes uncommitted in the working tree."
+  ],
+  "startingPoints": [
+    "DESIGN_DECISIONS.md",
+    "src/styles.css",
+    "src/App.tsx",
+    "src/engine/activities.tsx",
+    "src/components/ItemVisual.tsx",
+    "src/components/Kiko.tsx",
+    "src/components/Coin.tsx",
+    "src/components/Instruction.tsx",
+    "src/content/items.ts",
+    "src/content/pets.ts",
+    "vite.config.ts",
+    "index.html",
+    "public/icons/",
+    "tests/e2e/playthrough.spec.ts",
+    "tests/e2e/shots.spec.ts"
+  ],
+  "validation": [
+    "npm run typecheck",
+    "npm test",
+    "npm run build"
+  ],
+  "behavioralAcceptance": {
+    "required": true,
+    "owner": "worker",
+    "commands": ["npm run e2e", "npm run e2e:shots"]
+  },
+  "category": "ui-css",
+  "complexity": "hard",
+  "bounded": false,
+  "exploration": "local",
+  "risk": "medium",
+  "expectedCost": "large",
+  "executionStyle": "deep-reasoning",
+  "visual": true
+}

@@ -1,9 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="My English Adventure placeholder icon">
-  <rect width="512" height="512" rx="112" fill="#23aeb1"/>
-  <circle cx="256" cy="251" r="157" fill="#ffb443"/>
-  <path d="m139 155 35-75 51 67M373 155l-35-75-51 67" fill="#ff8a65" stroke="#4b3a32" stroke-width="19" stroke-linejoin="round"/>
-  <circle cx="200" cy="237" r="19" fill="#4b3a32"/>
-  <circle cx="312" cy="237" r="19" fill="#4b3a32"/>
-  <path d="M192 312q64 56 128 0" fill="none" stroke="#4b3a32" stroke-width="21" stroke-linecap="round"/>
-  <path d="m403 349 16 32 37 5-27 26 7 36-33-17-34 17 7-36-27-26 38-5z" fill="#ffe166" stroke="#fff8e8" stroke-width="11"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="My English Adventure app icon featuring Kiko">
+  <defs>
+    <linearGradient id="sky" x1="96" y1="20" x2="416" y2="492" gradientUnits="userSpaceOnUse"><stop stop-color="#6DE4E2"/><stop offset="1" stop-color="#158EAA"/></linearGradient>
+    <linearGradient id="fur" x1="188" y1="131" x2="330" y2="416" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD08B"/><stop offset=".52" stop-color="#FF9A63"/><stop offset="1" stop-color="#EE6D58"/></linearGradient>
+    <linearGradient id="belly" x1="225" y1="309" x2="288" y2="416" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF3CE"/><stop offset="1" stop-color="#FFDCA5"/></linearGradient>
+    <linearGradient id="star" x1="355" y1="306" x2="431" y2="418" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF495"/><stop offset=".55" stop-color="#FFD64E"/><stop offset="1" stop-color="#F39A24"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#075B72" flood-opacity=".3"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <path d="M0 389c76-45 139-55 212-32 79 25 151 14 300-61v216H0Z" fill="#FFE7A8"/>
+  <path d="M0 428c107-45 209-49 307-12 67 25 135 22 205-8v104H0Z" fill="#F5BE61" opacity=".56"/>
+  <g fill="#FFFDF2" opacity=".86"><path d="M47 130c6-24 38-28 52-10 11-23 49-17 51 11 21 0 27 31 7 38H50c-25-3-27-34-3-39Z"/><path d="M369 90c5-19 31-23 42-8 9-18 39-14 41 9 17 0 21 25 5 31h-85c-20-2-22-27-3-32Z"/></g>
+  <g filter="url(#shadow)">
+    <path d="M158 202c-25-67-2-112 49-67 29-18 70-20 100-3 55-43 76 7 45 72 20 24 29 55 24 89-8 65-55 122-119 125-66 3-119-51-123-118-2-37 7-70 24-98Z" fill="url(#fur)" stroke="#B94E48" stroke-width="11" stroke-linejoin="round"/>
+    <path d="M178 179c-9-25-6-42 6-45 10-2 24 9 37 29-16 4-30 9-43 16ZM332 179c10-26 8-43-4-45-11-2-25 10-38 30 16 3 30 8 42 15Z" fill="#FFB17D"/>
+    <path d="M188 160c7-28 26-43 50-31 11-29 48-30 59-1 23-13 44 2 49 29-21-18-49-29-79-29-30 0-58 11-79 32Z" fill="#FFD58F"/>
+    <ellipse cx="256" cy="357" rx="58" ry="62" fill="url(#belly)" opacity=".94"/>
+    <path d="M148 287c-27 7-45 29-36 47 9 17 33 11 53-7M365 285c27 7 45 29 36 47-9 17-33 11-53-7" fill="none" stroke="#E66B55" stroke-width="20" stroke-linecap="round"/>
+    <ellipse cx="211" cy="253" rx="18" ry="24" fill="#3D3040"/><ellipse cx="301" cy="253" rx="18" ry="24" fill="#3D3040"/>
+    <circle cx="205" cy="245" r="6" fill="white"/><circle cx="295" cy="245" r="6" fill="white"/>
+    <ellipse cx="178" cy="285" rx="23" ry="11" fill="#F56F72" opacity=".56"/><ellipse cx="334" cy="285" rx="23" ry="11" fill="#F56F72" opacity=".56"/>
+    <path d="M244 279q12 10 24 0M218 293q38 38 76 0" fill="none" stroke="#713D46" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M230 209c15-9 37-12 54-5" fill="none" stroke="#FFE1A6" stroke-width="8" stroke-linecap="round" opacity=".72"/>
+  </g>
+  <path d="m395 319 17 35 39 6-28 27 7 39-35-19-36 19 7-39-28-27 39-6Z" fill="url(#star)" stroke="#FFF8DA" stroke-width="10" stroke-linejoin="round"/>
+  <path d="m380 353 8 7 17-19" fill="none" stroke="#FFF9D9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

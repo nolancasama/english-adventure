@@ -29,10 +29,12 @@ const lessonIds = [
 ] as const;
 
 const shotsDirectory = path.join(".tmp", "shots");
+const responsiveShotsDirectory = path.join(".tmp", "responsive-shots");
 
 test.beforeAll(async () => {
   await rm(shotsDirectory, { recursive: true, force: true });
   await mkdir(shotsDirectory, { recursive: true });
+  await mkdir(responsiveShotsDirectory, { recursive: true });
 });
 
 async function hook<T>(page: Page, key: MeaHookKey): Promise<T> {
@@ -44,11 +46,63 @@ async function hook<T>(page: Page, key: MeaHookKey): Promise<T> {
   }, key);
 }
 
+async function waitForImages(page: Page) {
+  await expect.poll(() => page.locator("img").evaluateAll((images) =>
+    images.every((image) => (image as HTMLImageElement).complete))).toBe(true);
+}
+
 async function capture(page: Page, name: string) {
+  await waitForImages(page);
+  if (await page.getByTestId("question-type").isVisible().catch(() => false)) {
+    await expectQuestionVisualsInsideContainers(page);
+  }
   await page.screenshot({
     path: path.join(shotsDirectory, name),
     animations: "disabled"
   });
+}
+
+async function expectQuestionVisualsInsideContainers(page: Page) {
+  const failures = await page.locator(".question-card .emoji-art, .question-card .color-blob").evaluateAll((visuals) =>
+    visuals.flatMap((visual) => {
+      const container = visual.closest(".picture-choice, .prompt-visual, .builder-prompt");
+      if (!container) {
+        return [{
+          visual: visual.className,
+          container: null,
+          reason: "missing visual container"
+        }];
+      }
+
+      const visualBox = visual.getBoundingClientRect();
+      const containerBox = container.getBoundingClientRect();
+      const tolerance = 1;
+      const isInside =
+        visualBox.left >= containerBox.left - tolerance
+        && visualBox.top >= containerBox.top - tolerance
+        && visualBox.right <= containerBox.right + tolerance
+        && visualBox.bottom <= containerBox.bottom + tolerance;
+
+      return isInside ? [] : [{
+        visual: visual.className,
+        container: container.className,
+        visualBox: {
+          left: visualBox.left,
+          top: visualBox.top,
+          right: visualBox.right,
+          bottom: visualBox.bottom
+        },
+        containerBox: {
+          left: containerBox.left,
+          top: containerBox.top,
+          right: containerBox.right,
+          bottom: containerBox.bottom
+        }
+      }];
+    })
+  );
+
+  expect(failures, "question visuals must stay inside their card or prompt").toEqual([]);
 }
 
 async function questionSignature(page: Page) {
@@ -135,7 +189,12 @@ async function playAndCaptureLesson(page: Page, lessonId: string) {
 
 test("capture every lesson and supporting screen at 320x640", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.addInitScript(() => { if (!sessionStorage.getItem("mea.e2e.cleared")) { localStorage.removeItem("mea.progress.v1"); sessionStorage.setItem("mea.e2e.cleared", "1"); } });
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("mea.e2e.cleared")) {
+      localStorage.removeItem("mea.progress.v1");
+      sessionStorage.setItem("mea.e2e.cleared", "1");
+    }
+  });
   await page.goto("/?e2e=1&shots=1");
 
   await expect(page.getByTestId("screen-home")).toBeVisible();
@@ -164,3 +223,82 @@ test("capture every lesson and supporting screen at 320x640", async ({ page }) =
   await page.mouse.up();
   await capture(page, "parent-00-view.png");
 });
+
+async function captureResponsive(page: Page, viewportName: string, screenName: string) {
+  await waitForImages(page);
+  if (await page.getByTestId("question-type").isVisible().catch(() => false)) {
+    await expectQuestionVisualsInsideContainers(page);
+  }
+  await page.screenshot({
+    path: path.join(responsiveShotsDirectory, `${viewportName}-${screenName}`),
+    animations: "disabled"
+  });
+}
+
+async function captureResponsiveJourney(page: Page, viewportName: string) {
+  await page.addInitScript(() => localStorage.removeItem("mea.progress.v1"));
+  await page.goto("/?e2e=1&shots=1");
+  await expect(page.getByTestId("screen-home")).toBeVisible();
+  await captureResponsive(page, viewportName, "home.png");
+
+  const capturedQuestionTypes = new Set<QuestionType>();
+  let capturedCelebration = false;
+  let capturedBossQuestion = false;
+
+  for (const lessonId of lessonIds) {
+    await page.getByTestId(`lesson-node-${lessonId}`).click();
+    const titleCard = page.getByTestId("lesson-title-card");
+    await expect(titleCard).toBeVisible();
+    if (lessonId === "animals") {
+      await captureResponsive(page, viewportName, "title-card.png");
+    }
+    await titleCard.click();
+    await expect.poll(() => hook(page, "currentLessonId")).toBe(lessonId);
+
+    while (!(await page.getByTestId("lesson-celebration").isVisible().catch(() => false))) {
+      await expect.poll(() => hook(page, "currentQuestionType")).not.toBeNull();
+      const type = await hook<QuestionType>(page, "currentQuestionType");
+
+      if (["listen-picture", "picture-word", "sentence-builder"].includes(type)
+        && !capturedQuestionTypes.has(type)) {
+        await captureResponsive(page, viewportName, `${type}.png`);
+        capturedQuestionTypes.add(type);
+      }
+      if (lessonId === "boss" && !capturedBossQuestion) {
+        await captureResponsive(page, viewportName, "boss-question.png");
+        capturedBossQuestion = true;
+      }
+
+      await answerCurrentQuestion(page);
+    }
+
+    if (!capturedCelebration) {
+      await captureResponsive(page, viewportName, "celebration.png");
+      capturedCelebration = true;
+    }
+    await page.getByTestId("celebration-continue").click();
+    await expect(page.getByTestId("screen-home")).toBeVisible();
+  }
+
+  expect([...capturedQuestionTypes].sort()).toEqual([
+    "listen-picture",
+    "picture-word",
+    "sentence-builder"
+  ]);
+  expect(capturedBossQuestion).toBe(true);
+
+  await page.getByTestId("pets-button").click();
+  await expect(page.getByTestId("screen-pets")).toBeVisible();
+  await captureResponsive(page, viewportName, "pets.png");
+}
+
+for (const viewport of [
+  { name: "390x844", width: 390, height: 844 },
+  { name: "768x1024", width: 768, height: 1024 }
+]) {
+  test(`capture responsive review set at ${viewport.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await captureResponsiveJourney(page, viewport.name);
+  });
+}
